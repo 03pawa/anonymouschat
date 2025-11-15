@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Anonymous Chat Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        input, select, button {
+            padding: 10px;
+            margin: 5px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #messages {
+            height: 200px;
+            overflow-y: scroll;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background-color: #f8f9fa;
+        }
+        .message {
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 3px;
+        }
+        .system {
+            background-color: #e9ecef;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <h1>Anonymous Chat Test</h1>
+    
+    <div class="container">
+        <h2>Registration</h2>
+        <form id="registerForm">
+            <input type="text" id="interests" placeholder="Your interests (comma separated)" required><br>
+            <select id="education" required>
+                <option value="">Select education level</option>
+                <option value="high-school">High School</option>
+                <option value="associate">Associate Degree</option>
+                <option value="bachelor">Bachelor's Degree</option>
+                <option value="master">Master's Degree</option>
+                <option value="doctorate">Doctorate</option>
+                <option value="other">Other</option>
+            </select><br>
+            <button type="submit">Register</button>
+        </form>
+    </div>
+    
+    <div class="container" id="chatContainer" style="display: none;">
+        <h2>Anonymous Chat</h2>
+        <div id="messages"></div>
+        <form id="messageForm">
+            <input type="text" id="messageInput" placeholder="Type your message..." required>
+            <button type="submit">Send</button>
+        </form>
+        <button id="disconnectBtn">Disconnect</button>
+    </div>
+    
+    <div class="container">
+        <h2>Server Status</h2>
+        <button id="checkStatus">Check Server Status</button>
+        <div id="statusResult"></div>
+    </div>
+
+    <script>
+        let userId = null;
+        
+        // Registration form handler
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const interests = document.getElementById('interests').value;
+            const education = document.getElementById('education').value;
+            
+            try {
+                const response = await fetch('http://localhost:3001/api/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ interests, education }),
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    userId = data.userId;
+                    document.getElementById('registerForm').style.display = 'none';
+                    document.getElementById('chatContainer').style.display = 'block';
+                    addMessage('System', 'Registration successful! You are now ready to chat.', 'system');
+                } else {
+                    alert('Registration failed: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error connecting to server: ' + error.message);
+            }
+        });
+        
+        // Message form handler
+        document.getElementById('messageForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const message = document.getElementById('messageInput').value;
+            if (message.trim()) {
+                addMessage('You', message);
+                document.getElementById('messageInput').value = '';
+                // In a real app, we would send this to the server via WebSocket
+            }
+        });
+        
+        // Disconnect button handler
+        document.getElementById('disconnectBtn').addEventListener('click', () => {
+            document.getElementById('registerForm').style.display = 'block';
+            document.getElementById('chatContainer').style.display = 'none';
+            document.getElementById('messages').innerHTML = '';
+            userId = null;
+        });
+        
+        // Check server status
+        document.getElementById('checkStatus').addEventListener('click', async () => {
+            try {
+                const response = await fetch('http://localhost:3001/');
+                const text = await response.text();
+                document.getElementById('statusResult').innerHTML = '<p style="color: green;">Server is running!</p>';
+            } catch (error) {
+                document.getElementById('statusResult').innerHTML = '<p style="color: red;">Server is not accessible: ' + error.message + '</p>';
+            }
+        });
+        
+        // Helper function to add messages to the chat
+        function addMessage(sender, text, type = '') {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ' + type;
+            messageDiv.innerHTML = `<strong>${sender}:</strong> ${text}`;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+    </script>
+</body>
+</html>

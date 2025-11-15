@@ -1,0 +1,6 @@
+version: "2"
+authtoken: 359guvAen9Qknp1M1tpelRguWIS_VfXpD5yp6neoq4vjnV1q
+tunnels:
+  chat-app:
+    addr: 3001
+    proto: http
